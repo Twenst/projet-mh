@@ -2,7 +2,7 @@
 #include "parser.h"
 
 int main() {
-    const std::string filename = instances[0];
+    const std::string filename = instanceFilenames[0];
     try {
         Graph graph = parseGraphFromFile(filename);
         std::cout << "Graph parsed successfully from file: " << filename << std::endl;

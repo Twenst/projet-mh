@@ -20,11 +20,11 @@ Graph parseGraphFromFile(const std::string& filename) {
             std::smatch matches;
             if (std::regex_search(line, matches, pattern)) {
                 n = std::stoi(matches[1]);
+                m = std::stoi(matches[2]);
                 incidenceMatrix.resize(n, std::vector<bool>(n, false)); // Initialize the incidence matrix with false
             }
         }
         if (line[0] == 'e') {
-            m++;
             // ligne de type "e %d %d"
             std::regex pattern(R"(e (\d+) (\d+))");
             std::smatch matches;
