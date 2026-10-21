@@ -32,6 +32,8 @@ Graph parseGraphFromFile(const std::string& filename) {
                 int u = std::stoi(matches[1]);
                 int v = std::stoi(matches[2]);
                 incidenceMatrix[u - 1][v - 1] = true;
+                incidenceMatrix[v - 1][u - 1] = true;
+
             }
 
         }

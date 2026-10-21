@@ -9,4 +9,5 @@ add_executable(projet_mh
     src/main.cpp
     src/graph.cpp
     src/parser.cpp
+    src/solver.cpp
 )

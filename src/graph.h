@@ -5,6 +5,8 @@ using namespace std;
 
 class Graph {
 public:
+    int n; // Number of vertices
+    int m; // Number of edges 
     Graph(std::vector<std::vector<bool>> matrix) {
         incidenceMatrix = matrix;
         n = matrix.size();
@@ -26,10 +28,9 @@ public:
         if (i < 0 || i >= incidenceMatrix.size() || j < 0 || j >= incidenceMatrix.size()) {
             return false; // Out of bounds
         }
-        return incidenceMatrix[i][j];
+        return incidenceMatrix[i][j] || incidenceMatrix[j][i];
     }
-    int n; // Number of vertices
-    int m; // Number of edges 
+    
 
     void printIncidenceMatrix() {
         for (const auto& row : incidenceMatrix) {
@@ -38,6 +39,16 @@ public:
             }
             std::cout << std::endl;
         }
+    }
+
+    vector<int> getNeighbors(int vertex) {
+        vector<int> neighbors;
+        for (int j = 0; j < n; ++j) {
+            if (isLinked(vertex, j)) {
+                neighbors.push_back(j);
+            }
+        }
+        return neighbors;
     }
 private:
     std::vector<std::vector<bool>> incidenceMatrix;
