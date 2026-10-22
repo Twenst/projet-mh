@@ -19,10 +19,6 @@ Coloration heuristicSolve(Graph& graph, int numColors)
 
         std::list<int> vertexesAccessible;
         vertexesAccessible.push_back(vertex);
-        for (auto& neighbor : graph.getNeighbors(vertex))
-        {
-            vertexesAccessible.push_back(neighbor);
-        }
 
         // Parcours en profondeur
         while (!vertexesAccessible.empty())
@@ -46,6 +42,42 @@ Coloration heuristicSolve(Graph& graph, int numColors)
             }
         }
     }
+
+    coloration.fillColorationWithMinConflict();
+
+    return coloration;
+}
+
+Coloration DSATUR(Graph& graph, int numColors)
+{
+    Coloration coloration(graph, numColors);
+
+    std::list<int> vertexList = {};
+    std::list<vector<int>> vertexToColor = {};
+    for (int i = 0; i < graph.n; ++i)
+    {
+        vertexList.push_back(i);
+        int deg = graph.getNeighbors(i).size();
+        vertexToColor.push_back({deg, i});
+    }
+    vertexToColor.sort([](const vector<int>& a, const vector<int>& b) {
+        return a[0] > b[0]; // Degré décroissant
+    });
+
+    int maxDegreeVertex = vertexToColor.front()[1];
+    coloration.setColor(maxDegreeVertex, 0);
+    vertexList.remove(maxDegreeVertex);
+
+    while (!vertexList.empty())
+    {
+        int vertex = coloration.getMaxDSAT(vertexList);
+        vertexList.remove(vertex);
+
+        int color = coloration.firstAvailableColor(vertex);
+        if (color != -1) coloration.setColor(vertex, color);
+    }
+
+    coloration.fillColorationWithMinConflict();
 
     return coloration;
 }

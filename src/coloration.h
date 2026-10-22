@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include "graph.h"
+#include <list>
 
 class Coloration {
 public:
@@ -40,7 +41,7 @@ public:
     bool isValidPartialColoring(int vertex) {
         for (int j = 0; j < graph.n; j++) {
             if (graph.isLinked(vertex, j) 
-                && colors[vertex] == colors[j] && colors[vertex] != -1 && colors[j] != -1) {
+                && colors[vertex] == colors[j]  && colors[j] != -1) {
                 return false; // sommets voisins déjà colorés de mm couleur
             }
         }
@@ -87,6 +88,123 @@ public:
     void printColoration() {
         for (int i = 0; i < graph.n; i++) {
             std::cout << "Vertex " << i << ": Color " << colors[i] << std::endl;
+        }
+    }
+
+    int getConflitNumber() 
+    {
+        int conflictCount = 0;
+        for (int i = 0; i < graph.n; i++)
+        {
+            for (int j = i + 1; j < graph.n; j++)
+            {
+                if (graph.isLinked(i, j) && colors[i] == colors[j] && colors[i] != -1)
+                {
+                    conflictCount++;
+                }
+            }
+        }
+        return conflictCount;
+    }
+
+    int DSAT(int vertex) {
+        std::vector<bool> usedColors(numColors, false);
+        for (int j = 0; j < graph.n; j++) {
+            if (graph.isLinked(vertex, j) && colors[j] != -1) {
+                usedColors[colors[j]] = true;
+            }
+        }
+        int dsat = 0;
+        for (bool used : usedColors) {
+            if (used) {
+                dsat++;
+            }
+        }
+        return dsat;
+    }
+
+    int getMaxDSAT(std::list<int> vertexes)
+    {
+        int maxDSAT = -1;
+        int maxDeg = -1;
+        int argmaxDSAT = -1;
+        for (auto i : vertexes)
+        {
+            if (getColor(i) == -1)
+            {
+                int dsat = DSAT(i);
+                if (dsat == maxDSAT)
+                {
+                    int deg = graph.getNeighbors(i).size();
+                    if (deg > maxDeg)
+                    {
+                        maxDeg = deg;
+                        argmaxDSAT = i;
+                    }
+                }
+                else if (dsat > maxDSAT)
+                {
+                    maxDSAT = dsat;
+                    maxDeg = graph.getNeighbors(i).size();
+                    argmaxDSAT = i;
+                }
+            }
+        }
+
+        return argmaxDSAT;
+    }
+
+    int getMaxDSAT()
+    {
+        std::list<int> uncoloredVertexes = {};
+        for (int i = 0; i < graph.n; i ++)
+        {
+            if (getColor(i) == -1)
+            {
+                uncoloredVertexes.push_back(i);
+            }
+        }
+        return getMaxDSAT(uncoloredVertexes);
+    }
+        
+    void fillColorationWithMinConflict()
+    /**
+    * Met à chaque sommet non coloré la couleur qui est là moins présente parmi ses voisins.
+    */
+    {
+        std::list<vector<int>> vertexToColor = {};
+        for (int i = 0; i < graph.n; i++)
+        {
+            if (getColor(i) == -1)
+            {
+                vertexToColor.push_back({int(graph.getNeighbors(i).size()), i});
+            }
+        }
+        vertexToColor.sort([](const vector<int>& a, const vector<int>& b) {
+            return a[0] < b[0]; // Degré croissant
+        });
+
+        for (auto vertDeg : vertexToColor)
+        {
+            int vert = vertDeg[1];
+            if (getColor(vert) == -1)
+            {
+                vector<int> colorCounts(numColors, 0);
+                for (auto& neighbor : graph.getNeighbors(vert))
+                {
+                    int neighborColor = getColor(neighbor);
+                    if (neighborColor != -1)
+                    {
+                        colorCounts[neighborColor]++;
+                    }
+                }
+                int minColor = graph.n; 
+                for (auto colorCount : colorCounts)
+                {
+                    if (colorCount < minColor) minColor = colorCount;
+                }
+                setColor(vert, minColor);
+            }
         }
     }
 
