@@ -10,4 +10,5 @@ add_executable(projet_mh
     src/graph.cpp
     src/parser.cpp
     src/solver.cpp
+    src/clock.h
 )

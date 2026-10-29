@@ -2,6 +2,7 @@
 #include <vector>
 #include "graph.h"
 #include <list>
+#include <random>
 
 class Coloration {
 public:
@@ -91,7 +92,7 @@ public:
         }
     }
 
-    int getConflitNumber() 
+    int getConflitCount() 
     {
         int conflictCount = 0;
         for (int i = 0; i < graph.n; i++)
@@ -167,10 +168,10 @@ public:
         return getMaxDSAT(uncoloredVertexes);
     }
         
-    void fillColorationWithMinConflict()
     /**
     * Met à chaque sommet non coloré la couleur qui est là moins présente parmi ses voisins.
     */
+    void fillColorationWithMinConflict()
     {
         std::list<vector<int>> vertexToColor = {};
         for (int i = 0; i < graph.n; i++)
@@ -206,6 +207,112 @@ public:
                 setColor(vert, minColor);
             }
         }
+    }
+
+    Coloration copy() 
+    {
+        Coloration newColoration(graph, numColors);
+        newColoration.colors = colors;
+        newColoration._isValidColoring = _isValidColoring;
+        newColoration._isValidPartialColoring = _isValidPartialColoring;
+        return newColoration;
+    }
+
+    /**
+    * Retourne une coloration voisine de la coloration actuelle en changeant la couleur d'un sommet choisi aléatoirement.
+    * La nouvelle couleur est choisie aléatoirement mais elle doit être différente de sorte à produire une solution différente.
+    */
+    Coloration getRandomNeighborColorationFromV1()
+    {
+        Coloration newColoration = copy();
+        
+        int randomVertex = std::rand() % graph.n;
+        int randomColor = std::rand() % numColors;
+        int currentColor = newColoration.getColor(randomVertex); 
+
+        while (randomColor == currentColor)
+        {
+            randomColor = std::rand() % numColors;
+        }
+
+        newColoration.setColor(randomVertex, randomColor);
+
+        return newColoration;
+    }
+
+    /**
+    * Retourne une coloration voisine de la coloration actuelle en échangeant les couleurs
+    * de 2 sommets aléatoires dont les couleurs sont différentes de sorte à produire une solution différente.
+    */
+    Coloration getRandomNeighborColorationFromV2()
+    {
+        Coloration newColoration = copy();
+        
+        int randomVertex1 = std::rand() % graph.n;
+        int currentColor1 = newColoration.getColor(randomVertex1); 
+        int randomVertex2 = std::rand() % graph.n;
+        int currentColor2 = newColoration.getColor(randomVertex2);
+
+        while (currentColor2 == currentColor1)
+        {
+            randomVertex2 = std::rand() % graph.n;
+            currentColor2 = newColoration.getColor(randomVertex2);
+        }
+
+        newColoration.setColor(randomVertex1, currentColor2);
+        newColoration.setColor(randomVertex2, currentColor1);
+
+        return newColoration;
+    }
+
+    /**
+    * Retourne une coloration voisine de la coloration actuelle en échangeant les couleurs
+    * de 3 sommets aléatoires dont les couleurs sont toutes différentes de sorte à produire une solution différente.
+    */
+    Coloration getRandomNeighborColorationFromV3()
+    {
+        Coloration newColoration = copy();
+        
+        int randomVertex1 = std::rand() % graph.n;
+        int currentColor1 = newColoration.getColor(randomVertex1); 
+        int randomVertex2 = std::rand() % graph.n;
+        int currentColor2 = newColoration.getColor(randomVertex2);
+        int randomVertex3 = std::rand() % graph.n;
+        int currentColor3 = newColoration.getColor(randomVertex3);
+
+        while (currentColor2 == currentColor1
+            || currentColor2 == currentColor3
+            || currentColor3 == currentColor1)
+        {
+            if (currentColor2 == currentColor1)
+            {
+                randomVertex2 = std::rand() % graph.n;
+                currentColor2 = newColoration.getColor(randomVertex2);
+            }
+            if (currentColor1 == currentColor3 || currentColor2 == currentColor3)
+            {
+                randomVertex3 = std::rand() % graph.n;
+                currentColor3 = newColoration.getColor(randomVertex3);
+            }
+        }
+
+        newColoration.setColor(randomVertex1, currentColor2);
+        newColoration.setColor(randomVertex2, currentColor3);
+        newColoration.setColor(randomVertex3, currentColor1);
+
+
+        return newColoration;
+    }
+
+    Coloration &operator=(const Coloration &other) {
+        if (this != &other) {
+            this->graph = other.graph;
+            this->numColors = other.numColors;
+            this->colors = other.colors;
+            this->_isValidColoring = other._isValidColoring;
+            this->_isValidPartialColoring = other._isValidPartialColoring;
+        }
+        return *this;
     }
 
 private:
