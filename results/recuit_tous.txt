@@ -1,0 +1,110 @@
+Instance: instances/dsjc125.1.col
+Colors: 5
+Conflicts: 0
+Time (ms): 85453
+
+Instance: instances/dsjc125.9.col
+Colors: 22
+Conflicts: 171
+Time (ms): 300009
+
+Instance: instances/dsjc125.9.col
+Colors: 44
+Conflicts: 15
+Time (ms): 300001
+
+Instance: instances/dsjc250.1.col
+Colors: 8
+Conflicts: 18
+Time (ms): 300001
+
+Instance: instances/dsjc250.5.col
+Colors: 28
+Conflicts: 73
+Time (ms): 300000
+
+Instance: instances/dsjc250.9.col
+Colors: 36
+Conflicts: 431
+Time (ms): 300006
+
+Instance: instances/dsjc250.9.col
+Colors: 72
+Conflicts: 60
+Time (ms): 300006
+
+Instance: instances/flat300_26_0.col
+Colors: 13
+Conflicts: 918
+Time (ms): 300002
+
+Instance: instances/flat300_26_0.col
+Colors: 26
+Conflicts: 176
+Time (ms): 300000
+
+Instance: instances/le450_15c.col
+Colors: 8
+Conflicts: 1219
+Time (ms): 300000
+
+Instance: instances/le450_15c.col
+Colors: 15
+Conflicts: 21
+Time (ms): 300001
+
+Instance: instances/dsjc125.1.col
+Colors: 5
+Conflicts: 3
+Time (ms): 10838
+
+Instance: instances/dsjc125.9.col
+Colors: 22
+Conflicts: 153
+Time (ms): 28594
+
+Instance: instances/dsjc125.9.col
+Colors: 44
+Conflicts: 0
+Time (ms): 22419
+
+Instance: instances/dsjc250.1.col
+Colors: 8
+Conflicts: 6
+Time (ms): 17829
+
+Instance: instances/dsjc250.5.col
+Colors: 28
+Conflicts: 28
+Time (ms): 35406
+
+Instance: instances/dsjc250.9.col
+Colors: 36
+Conflicts: 386
+Time (ms): 52464
+
+Instance: instances/dsjc250.9.col
+Colors: 72
+Conflicts: 13
+Time (ms): 50753
+
+Instance: instances/flat300_26_0.col
+Colors: 13
+Conflicts: 948
+Time (ms): 44640
+
+Instance: instances/flat300_26_0.col
+Colors: 26
+Conflicts: 123
+Time (ms): 42132
+
+Instance: instances/le450_15c.col
+Colors: 15
+Conflicts: 239
+Time (ms): 37061
+
+Instance: instances/le450_15c.col
+Colors: 8
+Conflicts: 1278
+Time (ms): 37575
+

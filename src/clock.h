@@ -1,5 +1,7 @@
 // Code obtenu sur StackOverflow : https://stackoverflow.com/a/10466612
 
+#pragma once
+
 #if !defined(_WIN32) && !defined(_WIN64) // Linux - Unix
     #  include <sys/time.h>
     typedef timeval sys_time_t;
@@ -18,7 +20,7 @@
     }
 #endif
 
-long long getTimeInMs()
+inline long long getTimeInMs()
 {
     sys_time_t t;
     system_time(&t);

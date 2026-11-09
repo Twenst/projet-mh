@@ -1,0 +1,19 @@
+Instance: instances/C2000.5.col
+Colors: 73
+Conflicts: 4849
+Time (ms): 900016
+
+Instance: instances/C2000.5.col
+Colors: 146
+Conflicts: 1220
+Time (ms): 900011
+
+Instance: instances/C4000.5.col
+Colors: 130
+Conflicts: 12246
+Time (ms): 900001
+
+Instance: instances/C4000.5.col
+Colors: 260
+Conflicts: 3459
+Time (ms): 900001

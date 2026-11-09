@@ -9,6 +9,8 @@ add_executable(projet_mh
     src/main.cpp
     src/graph.cpp
     src/parser.cpp
+    src/coloration.cpp
     src/solver.cpp
     src/clock.h
+    src/tabou.cpp
 )

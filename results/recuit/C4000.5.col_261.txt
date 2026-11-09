@@ -1,0 +1,4 @@
+Instance: instances/C4000.5.col
+Colors: 261
+Conflicts: 287665
+Time (ms): 564610

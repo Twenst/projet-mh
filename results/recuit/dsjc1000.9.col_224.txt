@@ -1,0 +1,4 @@
+Instance: instances/dsjc1000.9.col
+Colors: 224
+Conflicts: 204
+Time (ms): 224533

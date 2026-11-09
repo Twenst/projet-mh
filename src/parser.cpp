@@ -16,7 +16,7 @@ Graph parseGraphFromFile(const std::string& filename) {
         // chaque ligne commencant avec un c est un commentaire -> skip
         if (line[0] == 'p') {
             // ligne de type "p edge %d %d"
-            std::regex pattern(R"(p edge (\d+) (\d+))");
+            std::regex pattern(R"(p [^0-9]+ (\d+) (\d+))");
             std::smatch matches;
             if (std::regex_search(line, matches, pattern)) {
                 n = std::stoi(matches[1]);
@@ -33,6 +33,9 @@ Graph parseGraphFromFile(const std::string& filename) {
                 int v = std::stoi(matches[2]);
                 incidenceMatrix[u - 1][v - 1] = true;
                 incidenceMatrix[v - 1][u - 1] = true;
+                if (u > n || v > n) {
+                    throw std::runtime_error("Vertex index out of bounds in file: " + filename);
+                }
             }
         }
     }

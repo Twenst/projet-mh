@@ -3,12 +3,27 @@
 #include <algorithm>
 #include <iostream>
 #include "clock.h"
+#include "tabou.h"
+#include "results.h"
+#include <cmath>
 
-Coloration heuristicSolve(Graph& graph, int numColors)
+Coloration randomSolve(const Graph& graph, int numColors)
+{
+    Coloration coloration(graph, numColors);
+
+    for (int vertex = 0; vertex < graph.getNumVertices(); ++vertex)
+    {
+        coloration.setColor(vertex, rand() % numColors);
+    }
+
+    return coloration;
+}
+
+Coloration heuristicSolve(const Graph& graph, int numColors)
 {
     Coloration coloration(graph, numColors);
     std::list<int> vertexToColor = {};
-    for (int i = 0; i < graph.n; ++i)
+    for (int i = 0; i < graph.getNumVertices(); ++i)
     {
         vertexToColor.push_back(i);
     }
@@ -50,56 +65,68 @@ Coloration heuristicSolve(Graph& graph, int numColors)
     return coloration;
 }
 
-Coloration DSATUR(Graph& graph, int numColors)
+Coloration DSATUR(const Graph& graph, int numColors)
 {
     Coloration coloration(graph, numColors);
 
-    std::list<int> vertexList = {};
-    std::list<vector<int>> vertexToColor = {};
-    for (int i = 0; i < graph.n; ++i)
+    const int n = graph.getNumVertices();
+    std::vector<bool> colored(n, false);
+
+    for (int step = 0; step < n; ++step)
     {
-        vertexList.push_back(i);
-        int deg = graph.getNeighbors(i).size();
-        vertexToColor.push_back({deg, i});
-    }
-    vertexToColor.sort([](const vector<int>& a, const vector<int>& b) {
-        return a[0] > b[0]; // Degré décroissant
-    });
+        int bestVertex = -1;
+        int bestDSAT = -1;
+        int bestDegree = -1;
 
-    int maxDegreeVertex = vertexToColor.front()[1];
-    coloration.setColor(maxDegreeVertex, 0);
-    vertexList.remove(maxDegreeVertex);
+        for (int vertex = 0; vertex < n; ++vertex)
+        {
+            if (colored[vertex])
+                continue;
 
-    while (!vertexList.empty())
-    {
-        int vertex = coloration.getMaxDSAT(vertexList);
-        vertexList.remove(vertex);
+            int dsat = coloration.DSAT(vertex);
+            int degree = graph.getDegree(vertex);
 
-        int color = coloration.firstAvailableColor(vertex);
-        if (color != -1) coloration.setColor(vertex, color);
+            if (dsat > bestDSAT ||
+                (dsat == bestDSAT && degree > bestDegree))
+            {
+                bestVertex = vertex;
+                bestDSAT = dsat;
+                bestDegree = degree;
+            }
+        }
+
+        if (bestVertex == -1)
+            break;
+
+        int color = coloration.firstAvailableColor(bestVertex);
+
+        if (color == -1)
+            color = 0;
+
+        coloration.setColor(bestVertex, color);
+        colored[bestVertex] = true;
     }
 
     coloration.fillColorationWithMinConflict();
-
     return coloration;
 }
 
 
 /** Retourne la meilleure soluation voisine dans le `k`-ème voisinage parmi un échantillonage
 * aléatoire du voisinage de taille `sample_size`. */
-Coloration getBestFromVK(Coloration col, int k, int sampleSize)
+Coloration getBestFromVK(const Coloration& col, int k, int sampleSize)
 {
     switch (k)
     {
     case 0:
     {
         Coloration bestColoration = col.getRandomNeighborColorationFromV1();
-        int bestConflictCount = bestColoration.getConflitCount();
+        int bestConflictCount = bestColoration.getConflictCount();
 
         for (int i = 0; i < sampleSize-1; i++)
         {
             Coloration colTest = col.getRandomNeighborColorationFromV1();
-            int colTestConflictCount = colTest.getConflitCount();
+            int colTestConflictCount = colTest.getConflictCount();
 
             if (bestConflictCount > colTestConflictCount)
             {
@@ -112,12 +139,12 @@ Coloration getBestFromVK(Coloration col, int k, int sampleSize)
     case 1:
     {
         Coloration bestColoration = col.getRandomNeighborColorationFromV2();
-        int bestConflictCount = bestColoration.getConflitCount();
+        int bestConflictCount = bestColoration.getConflictCount();
 
         for (int i = 0; i < sampleSize-1; i++)
         {
             Coloration colTest = col.getRandomNeighborColorationFromV1();
-            int colTestConflictCount = colTest.getConflitCount();
+            int colTestConflictCount = colTest.getConflictCount();
 
             if (bestConflictCount > colTestConflictCount)
             {
@@ -130,12 +157,12 @@ Coloration getBestFromVK(Coloration col, int k, int sampleSize)
     case 2:
     {
         Coloration bestColoration = col.getRandomNeighborColorationFromV3();
-        int bestConflictCount = bestColoration.getConflitCount();
+        int bestConflictCount = bestColoration.getConflictCount();
 
         for (int i = 0; i < sampleSize-1; i++)
         {
             Coloration colTest = col.getRandomNeighborColorationFromV1();
-            int colTestConflictCount = colTest.getConflitCount();
+            int colTestConflictCount = colTest.getConflictCount();
 
             if (bestConflictCount > colTestConflictCount)
             {
@@ -151,12 +178,76 @@ Coloration getBestFromVK(Coloration col, int k, int sampleSize)
 
 }
 
-Coloration VariableNeighborSearchStochastic(Graph& graph, int numColors, int sampleSize, int maxTime)
+Coloration getBestFromVK(const Coloration& col, int k, int sampleSize, const Tabou& tabou, long long currentTime)
+{
+    switch (k)
+    {
+    case 0:
+    {
+        Coloration bestColoration = col.getRandomNeighborColorationFromV1(tabou, currentTime);
+        int bestConflictCount = bestColoration.getConflictCount();
+
+        for (int i = 0; i < sampleSize-1; i++)
+        {
+            Coloration colTest = col.getRandomNeighborColorationFromV1(tabou, currentTime);
+            int colTestConflictCount = colTest.getConflictCount();
+
+            if (bestConflictCount > colTestConflictCount)
+            {
+                bestColoration = colTest;
+                bestConflictCount = colTestConflictCount;
+            }
+        }
+        return bestColoration;
+    }
+    case 1:
+    {
+        Coloration bestColoration = col.getRandomNeighborColorationFromV2(tabou, currentTime);
+        int bestConflictCount = bestColoration.getConflictCount();
+
+        for (int i = 0; i < sampleSize-1; i++)
+        {
+            Coloration colTest = col.getRandomNeighborColorationFromV2(tabou, currentTime);
+            int colTestConflictCount = colTest.getConflictCount();
+
+            if (bestConflictCount > colTestConflictCount)
+            {
+                bestColoration = colTest;
+                bestConflictCount = colTestConflictCount;
+            }
+        }
+        return bestColoration;
+    }
+    case 2:
+    {
+        Coloration bestColoration = col.getRandomNeighborColorationFromV3(tabou, currentTime);
+        int bestConflictCount = bestColoration.getConflictCount();
+
+        for (int i = 0; i < sampleSize-1; i++)
+        {
+            Coloration colTest = col.getRandomNeighborColorationFromV3(tabou, currentTime);
+            int colTestConflictCount = colTest.getConflictCount();
+
+            if (bestConflictCount > colTestConflictCount)
+            {
+                bestColoration = colTest;
+                bestConflictCount = colTestConflictCount;
+            }
+        }
+        return bestColoration;
+    }
+    default:
+        throw "Voisinage invalide";
+    }
+
+}
+
+Coloration VariableNeighborSearchStochastic(const Graph& graph, int numColors, int sampleSize, int maxTime)
 {
     long long startTimeMs = getTimeInMs();
 
     Coloration currentSolution = DSATUR(graph, numColors);
-    int currentConflictCount = currentSolution.getConflitCount();
+    int currentConflictCount = currentSolution.getConflictCount();
     int lastTimeUpgrade = getTimeInMs();
     int exploredSolutionsSinceLastUpgrade = 0;
     int kMax = 2;
@@ -168,7 +259,7 @@ Coloration VariableNeighborSearchStochastic(Graph& graph, int numColors, int sam
         {
             Coloration testSolution = getBestFromVK(currentSolution, k, sampleSize);
             exploredSolutionsSinceLastUpgrade += sampleSize;
-            int testConflictCount = testSolution.getConflitCount();
+            int testConflictCount = testSolution.getConflictCount();
 
             if (testConflictCount < currentConflictCount)
             {
@@ -187,13 +278,13 @@ Coloration VariableNeighborSearchStochastic(Graph& graph, int numColors, int sam
     return currentSolution;
 }
 
-Coloration SimulatedAnnealing(Graph& graph, int numColors, float initTemp, float decay, int maxTime)
+Coloration SimulatedAnnealing(const Graph& graph, int numColors, float initTemp, float decay, int maxTime)
 {
     long long startTimeMs = getTimeInMs();
 
     Coloration currentSolution = DSATUR(graph, numColors);
     Coloration bestSolution = currentSolution;
-    int currentConflictCount = currentSolution.getConflitCount();
+    int currentConflictCount = currentSolution.getConflictCount();
     int bestConflictCount = currentConflictCount;
     int lastTimeUpgrade = getTimeInMs();
     int exploredSolutionsSinceLastUpgrade = 0;
@@ -201,12 +292,12 @@ Coloration SimulatedAnnealing(Graph& graph, int numColors, float initTemp, float
 
     while (getTimeInMs() - startTimeMs < maxTime)
     {
-        int palierSize = 30;
+        int palierSize = 10;
         for (int i = 0; i < palierSize; i++)
         {    
             Coloration testSolution = currentSolution.getRandomNeighborColorationFromV1();
             exploredSolutionsSinceLastUpgrade++;
-            int testConflictCount = testSolution.getConflitCount();
+            int testConflictCount = testSolution.getConflictCount();
 
             if (testConflictCount < currentConflictCount)
             {
@@ -224,7 +315,7 @@ Coloration SimulatedAnnealing(Graph& graph, int numColors, float initTemp, float
             }
             else 
             {
-                int delta = testConflictCount - currentConflictCount;
+                int delta = - testConflictCount + currentConflictCount;
                 double prob = exp(delta/temp);
 
                 if (rand()/RAND_MAX < prob)
@@ -240,15 +331,75 @@ Coloration SimulatedAnnealing(Graph& graph, int numColors, float initTemp, float
     return bestSolution;
 }
 
-/** Mix entre VNS Stochastique avec du recuit simulé,
- * la température augmente lorsque l'on reste bloqué dans le dernier voisinage pendant longtemps*/
-Coloration VariableNeighborSearchStochasticSimulatedAnnealing(Graph& graph, int numColors, int initSampleSize, float decay, int maxTime)
+/** Recuit simulé avec un voisinage aléatoire à chaque itération */
+Result SimulatedAnnealing2(const Graph& graph, int numColors, float initTemp, float decay, int maxTime)
 {
     long long startTimeMs = getTimeInMs();
 
     Coloration currentSolution = DSATUR(graph, numColors);
     Coloration bestSolution = currentSolution;
-    int currentConflictCount = currentSolution.getConflitCount();
+    int currentConflictCount = currentSolution.getConflictCount();
+    int bestConflictCount = currentConflictCount;
+    int lastTimeUpgrade = getTimeInMs();
+    int exploredSolutionsSinceLastUpgrade = 0;
+    int totalExploredSolutions = 0;
+    float temp = initTemp;
+
+    while (getTimeInMs() - startTimeMs < maxTime && bestConflictCount > 0 && temp > 0.0001)
+    {
+        int palierSize = 30;
+        for (int i = 0; i < palierSize; i++)
+        {   
+            int k = rand()%3;
+            Coloration testSolution = getBestFromVK(currentSolution, k, 1); 
+            exploredSolutionsSinceLastUpgrade++;
+            totalExploredSolutions++;
+            int testConflictCount = testSolution.getConflictCount();
+
+            if (testConflictCount < currentConflictCount)
+            {
+                if (testConflictCount < bestConflictCount)
+                {
+                    bestSolution = testSolution;
+                    bestConflictCount = testConflictCount;
+                    int currentTime = getTimeInMs();
+                    cout << "Best conflict count = " << bestConflictCount << " (Took " << (currentTime - lastTimeUpgrade) << " ms and " << exploredSolutionsSinceLastUpgrade << " solutions explored, Temp = " << temp << ".)" <<endl;
+                    lastTimeUpgrade = currentTime;
+                    exploredSolutionsSinceLastUpgrade = 0;
+                }
+                currentSolution = testSolution;
+                currentConflictCount = testConflictCount;
+            }
+            else 
+            {
+                int delta = - testConflictCount + currentConflictCount;
+                double prob = exp(delta/temp);
+
+                if (static_cast<float>(rand()) / RAND_MAX < prob)
+                {
+                    currentSolution = testSolution;
+                    currentConflictCount = testConflictCount;
+                }
+            }
+        }
+        temp *= decay;
+    }
+
+    Result result("", numColors, bestSolution, getTimeInMs() - startTimeMs, totalExploredSolutions);
+
+
+    return result;
+}
+
+/** Mix entre VNS Stochastique avec du recuit simulé,
+ * la température augmente lorsque l'on reste bloqué dans le dernier voisinage pendant longtemps*/
+Coloration VariableNeighborSearchStochasticSimulatedAnnealing(const Graph& graph, int numColors, int initSampleSize, float decay, int maxTime)
+{
+    long long startTimeMs = getTimeInMs();
+
+    Coloration currentSolution = DSATUR(graph, numColors);
+    Coloration bestSolution = currentSolution;
+    int currentConflictCount = currentSolution.getConflictCount();
     int bestConflictCount = currentConflictCount;
     int lastTimeUpgrade = getTimeInMs();
     int exploredSolutionsSinceLastUpgrade = 0;
@@ -256,59 +407,131 @@ Coloration VariableNeighborSearchStochasticSimulatedAnnealing(Graph& graph, int 
     int kMax = 2;
     int sampleSize = initSampleSize;
 
-    int k = 0;
     while (getTimeInMs() - startTimeMs < maxTime)
     {
-        Coloration testSolution = getBestFromVK(currentSolution, k, sampleSize);
-        exploredSolutionsSinceLastUpgrade += sampleSize;
-        int testConflictCount = testSolution.getConflitCount();
-
-        if (testConflictCount < currentConflictCount)
+        int k = 0;
+        while (k <= kMax)
         {
-            if (testConflictCount < bestConflictCount)
-            {
-                bestSolution = testSolution;
-                bestConflictCount = testConflictCount;
-                int currentTime = getTimeInMs();
-                cout << "Best conflict count = " << bestConflictCount << " (Took " << (currentTime - lastTimeUpgrade) << " ms and " << exploredSolutionsSinceLastUpgrade << " solutions explored, k="<<k<<", Temp=" <<temp<< ".)" <<endl;
-                lastTimeUpgrade = currentTime;
-                exploredSolutionsSinceLastUpgrade = 0;
-                temp = 0;
-                k = 0;
-                sampleSize = initSampleSize;
-            }
-            else
-            {
-                cout << "Current conflict count decreased = " << currentConflictCount << " (Best=" << bestConflictCount<<", k="<<k<<", Temp=" <<temp<< ".)" <<endl;
-            }
-            currentSolution = testSolution;
-            currentConflictCount = testConflictCount;
-        }
-        else 
-        {
-            if (temp > .1)
-            {
-                int delta = testConflictCount - currentConflictCount;
-                double prob = exp(delta/temp);
+            Coloration testSolution = getBestFromVK(currentSolution, k, sampleSize);
+            exploredSolutionsSinceLastUpgrade += sampleSize;
+            int testConflictCount = testSolution.getConflictCount();
 
-                if (rand()/RAND_MAX < prob)
+            if (testConflictCount < currentConflictCount)
+            {
+                if (testConflictCount < bestConflictCount)
                 {
-                    currentSolution = testSolution;
-                    currentConflictCount = testConflictCount;
-                    cout << "Current conflict count increased = " << currentConflictCount << " (Best=" << bestConflictCount<<", k="<<k<<", Temp=" <<temp<< ".)" <<endl;
+                    bestSolution = testSolution;
+                    bestConflictCount = testConflictCount;
+                    int currentTime = getTimeInMs();
+                    cout << "Best conflict count = " << bestConflictCount << " (Took " << (currentTime - lastTimeUpgrade) << " ms and " << exploredSolutionsSinceLastUpgrade << " solutions explored, k="<<k<<", Temp=" <<temp<< ".)" <<endl;
+                    lastTimeUpgrade = currentTime;
+                    exploredSolutionsSinceLastUpgrade = 0;
+                    temp = 0;
+                    k = 0;
+                    sampleSize = initSampleSize;
+                }
+                else
+                {
+                    cout << "Current conflict count decreased = " << currentConflictCount << " (Best=" << bestConflictCount<<", k="<<k<<", Temp=" <<temp<< ".)" <<endl;
+                }
+                currentSolution = testSolution;
+                currentConflictCount = testConflictCount;
+            }
+            else 
+            {
+                k ++;
+                int delta = currentConflictCount - testConflictCount;
+
+                if (temp > 0.1)
+                {
+                    double prob = exp(delta/temp);
+                    if (static_cast<float>(rand()) / RAND_MAX < prob)
+                    {
+                        currentSolution = testSolution;
+                        currentConflictCount = testConflictCount;
+                        cout << "Current conflict count increased = " << currentConflictCount << " (Best=" << bestConflictCount<<", k="<<k<<", Temp=" <<temp<< ".)" <<endl;
+                    }
                 }
             }
-            if (k == kMax)
-            {
-                temp += 5;
-                sampleSize++;
-            }
-            else k++;
         }
-
+        temp++;
+        sampleSize++;
         temp *= decay;
-        
     }
 
     return bestSolution;
+}
+
+Result VariableNeighborSearchStochasticSimulatedAnnealing2(const Graph& graph, int numColors, int initSampleSize, float decay, int maxTime, long long tabouCooldown)
+{
+    srand48(getTimeInMs());
+    Coloration currentSolution = randomSolve(graph, numColors);
+    Coloration bestSolution = currentSolution;
+    int currentConflictCount = currentSolution.getConflictCount();
+    int bestConflictCount = currentConflictCount;
+    int lastTimeUpgrade = getTimeInMs();
+    int exploredSolutionsSinceLastUpgrade = 0;
+    long long totalExploredSolutions = 0;
+    float temp = 0;
+    int kMax = 2;
+    int sampleSize = initSampleSize;
+    
+    long long startTimeMs = getTimeInMs();
+    Tabou tabou(currentSolution, tabouCooldown, getTimeInMs());
+
+    while (getTimeInMs() - startTimeMs < maxTime && bestConflictCount > 0)
+    {
+        int k = 0;
+        while (k <= kMax)
+        {
+            Coloration testSolution = getBestFromVK(currentSolution, k, sampleSize, tabou, getTimeInMs());
+            tabou.addDiffToTabou(currentSolution, testSolution, getTimeInMs());
+            totalExploredSolutions += sampleSize;
+            exploredSolutionsSinceLastUpgrade += sampleSize;
+            int testConflictCount = testSolution.getConflictCount();
+
+            if (testConflictCount <= currentConflictCount)
+            {
+                if (testConflictCount < bestConflictCount)
+                {
+                    bestSolution = testSolution;
+                    bestConflictCount = testConflictCount;
+                    int currentTime = getTimeInMs();
+                    cout << "Best conflict count = " << bestConflictCount << " (Took " << (currentTime - lastTimeUpgrade) << " ms and " << exploredSolutionsSinceLastUpgrade << " solutions explored, k="<<k<<", Temp=" <<temp<< ".)" <<endl;
+                    lastTimeUpgrade = currentTime;
+                    exploredSolutionsSinceLastUpgrade = 0;
+                    temp = 0;
+                    k = 0;
+                    sampleSize = initSampleSize;
+                }
+                else
+                {
+                    // cout << "Current conflict count decreased = " << currentConflictCount << " (Best=" << bestConflictCount<<", k="<<k<<", Temp=" <<temp<< ".)" <<endl;
+                }
+                currentSolution = testSolution;
+                currentConflictCount = testConflictCount;
+            }
+            else 
+            {
+                k ++;
+                int delta = currentConflictCount - testConflictCount;
+                double prob = exp(delta/temp);
+
+                if (static_cast<float>(rand()) / RAND_MAX < prob)
+                {
+                    currentSolution = testSolution;
+                    currentConflictCount = testConflictCount;
+                    // cout << "Current conflict count increased = " << currentConflictCount << " (Best=" << bestConflictCount<<", k="<<k<<", Temp=" <<temp<< ", prob=" << prob << ")." <<endl;
+                }
+            }
+        }
+        temp++;
+        sampleSize++;
+        sampleSize = std::min(sampleSize, 100);
+        temp *= decay;
+    }
+
+    Result result("", numColors, bestSolution, getTimeInMs() - startTimeMs, totalExploredSolutions);
+
+    return result;
 }

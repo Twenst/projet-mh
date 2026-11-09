@@ -1,0 +1,4 @@
+Instance: instances/le450_15c.col
+Colors: 15
+Conflicts: 15
+Time (ms): 300001

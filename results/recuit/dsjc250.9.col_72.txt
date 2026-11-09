@@ -1,0 +1,4 @@
+Instance: instances/dsjc250.9.col
+Colors: 72
+Conflicts: 9
+Time (ms): 50753

@@ -1,0 +1,4 @@
+Instance: instances/flat300_26_0.col
+Colors: 13
+Conflicts: 677
+Time (ms): 44640
